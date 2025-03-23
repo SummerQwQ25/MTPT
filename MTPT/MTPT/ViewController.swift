@@ -20,6 +20,9 @@ class ViewController: UIViewController, UITextViewDelegate {
   private let generateButton = UIButton(type: .system)
   private let clearButton = UIButton(type: .system)
   
+  // 添加切换开关
+  private let colorToggle = UISwitch()
+  
   // Combine 相关
   private var cancellables = Set<AnyCancellable>()
   
@@ -151,6 +154,12 @@ class ViewController: UIViewController, UITextViewDelegate {
     questionLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(questionLabel)
     
+    // 添加开关标题
+    let toggleTitle = UILabel()
+    toggleTitle.text = "自动添加背景颜色"
+    toggleTitle.font = .systemFont(ofSize: 14)
+    view.addSubview(toggleTitle)
+    
     // 设置问题输入框
     questionTextView.layer.borderColor = UIColor.lightGray.cgColor
     questionTextView.layer.borderWidth = 1
@@ -158,37 +167,25 @@ class ViewController: UIViewController, UITextViewDelegate {
     questionTextView.font = .systemFont(ofSize: 14)
     view.addSubview(questionTextView)
     
-    // 设置答案标签
-    answerLabel.text = "答案"
-    answerLabel.font = .boldSystemFont(ofSize: 16)
-    view.addSubview(answerLabel)
+    // 设置切换开关
+    colorToggle.isOn = true // 默认开启
+    view.addSubview(colorToggle)
     
-    // 设置答案输入框
-    answerTextView.layer.borderColor = UIColor.lightGray.cgColor
-    answerTextView.layer.borderWidth = 1
-    answerTextView.layer.cornerRadius = 5
-    answerTextView.font = .systemFont(ofSize: 14)
-    view.addSubview(answerTextView)
-    
-    // 设置生成图片按钮
-    generateButton.setTitle("生成图片", for: .normal)
-    generateButton.backgroundColor = .systemBlue
-    generateButton.setTitleColor(.white, for: .normal)
-    generateButton.layer.cornerRadius = 5
-    view.addSubview(generateButton)
-    
-    // 设置清空按钮
-    clearButton.setTitle("清空", for: .normal)
-    clearButton.backgroundColor = .systemGray
-    clearButton.setTitleColor(.white, for: .normal)
-    clearButton.layer.cornerRadius = 5
-    view.addSubview(clearButton)
-    
-    // 使用 SnapKit 设置约束
+    // 设置约束
     questionLabel.snp.makeConstraints { make in
       make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
       make.leading.equalToSuperview().offset(20)
+      make.trailing.lessThanOrEqualTo(toggleTitle.snp.leading).offset(-10)
+    }
+    
+    toggleTitle.snp.makeConstraints { make in
+      make.trailing.equalTo(colorToggle.snp.leading).offset(-8)
+      make.centerY.equalTo(questionLabel)
+    }
+    
+    colorToggle.snp.makeConstraints { make in
       make.trailing.equalToSuperview().offset(-20)
+      make.centerY.equalTo(questionLabel)
     }
     
     questionTextView.snp.makeConstraints { make in
@@ -198,11 +195,21 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
+    answerLabel.text = "答案"
+    answerLabel.font = .boldSystemFont(ofSize: 16)
+    view.addSubview(answerLabel)
+    
     answerLabel.snp.makeConstraints { make in
       make.top.equalTo(questionTextView.snp.bottom).offset(20)
       make.leading.equalToSuperview().offset(20)
       make.trailing.equalToSuperview().offset(-20)
     }
+    
+    answerTextView.layer.borderColor = UIColor.lightGray.cgColor
+    answerTextView.layer.borderWidth = 1
+    answerTextView.layer.cornerRadius = 5
+    answerTextView.font = .systemFont(ofSize: 14)
+    view.addSubview(answerTextView)
     
     answerTextView.snp.makeConstraints { make in
       make.top.equalTo(answerLabel.snp.bottom).offset(8)
@@ -211,6 +218,12 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
+    generateButton.setTitle("生成图片", for: .normal)
+    generateButton.backgroundColor = .systemBlue
+    generateButton.setTitleColor(.white, for: .normal)
+    generateButton.layer.cornerRadius = 5
+    view.addSubview(generateButton)
+    
     generateButton.snp.makeConstraints { make in
       make.top.equalTo(answerTextView.snp.bottom).offset(30)
       make.leading.equalToSuperview().offset(20)
@@ -218,20 +231,18 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(44)
     }
     
+    clearButton.setTitle("清空", for: .normal)
+    clearButton.backgroundColor = .systemGray
+    clearButton.setTitleColor(.white, for: .normal)
+    clearButton.layer.cornerRadius = 5
+    view.addSubview(clearButton)
+    
     clearButton.snp.makeConstraints { make in
       make.top.equalTo(answerTextView.snp.bottom).offset(30)
       make.trailing.equalToSuperview().offset(-20)
       make.width.equalToSuperview().multipliedBy(0.42)
       make.height.equalTo(44)
       make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-20)
-    }
-        
-        // 添加开关事件监听
-        colorToggle.addTarget(self, action: #selector(toggleColorAnalysis), for: .valueChanged)
-    }
-    
-    @objc private func toggleColorAnalysis() {
-        isColorEnabled = colorToggle.isOn
     }
   }
   
@@ -252,12 +263,16 @@ class ViewController: UIViewController, UITextViewDelegate {
     // 验证输入
     if questionText.isEmpty {
       showToast(message: "请输入问题")
-    // 创建预览控制器并推送
-    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText)
+      return
     }
-  }
+    
+    if answerText.isEmpty {
+      showToast(message: "请输入答案")
+      return
+    }
+    
     // 创建预览控制器并推送
-    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText)
+    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText, isColorEnabled: colorToggle.isOn)
     navigationController?.pushViewController(previewVC, animated: true)
   }
   
@@ -332,7 +347,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     // 设置标签居中位置
     toastLabel.frame = CGRect(
       x: view.frame.width/2 - labelWidth/2,
-      y: view.frame.height/2 - labelHeight/2,  // 修改为视图中央
+      y: view.frame.height/2 - labelHeight/2,
       width: labelWidth,
       height: labelHeight
     )

@@ -26,10 +26,13 @@ class PreviewViewController: UIViewController {
     return markdownsRendered >= 2  // 两个 MarkdownView 都加载完成
   }
   
+  private var isColorEnabled: Bool
+  
   // 初始化方法，传入问题和答案内容
-  init(questionText: String, answerText: String) {
+  init(questionText: String, answerText: String, isColorEnabled: Bool) {
     self.questionText = questionText
     self.answerText = answerText
+    self.isColorEnabled = isColorEnabled
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -174,7 +177,7 @@ class PreviewViewController: UIViewController {
     let theme = ThemeManager.shared.selectTheme(questionText: questionText, answerText: answerText)
     
     // 生成截图
-    generateTextImage(withTheme: theme) { image in
+    generateTextImage(withTheme: theme, isColorEnabled: isColorEnabled) { image in
         loadingAlert.dismiss(animated: true) {
             if let image = image {
                 // 图片生成成功，保存到相册
@@ -187,15 +190,19 @@ class PreviewViewController: UIViewController {
     }
   }
   
-  private func generateTextImage(withTheme theme: ThemeColors, completion: @escaping (UIImage?) -> Void) {
-    // 创建一个NSAttributedString来表示问题
+  private func generateTextImage(withTheme theme: ThemeColors, isColorEnabled: Bool, completion: @escaping (UIImage?) -> Void) {
+    let defaultContentText = UIColor.black
+    let defaultTitleText = UIColor.black
+    let defaultBackground = UIColor.white
+    let defaultContentBackground = UIColor.white
+    
     let questionAttributes: [NSAttributedString.Key: Any] = [
         .font: UIFont.systemFont(ofSize: 16),
-        .foregroundColor: theme.contentText
+        .foregroundColor: isColorEnabled ? theme.contentText : defaultContentText
     ]
     let questionTitleAttributes: [NSAttributedString.Key: Any] = [
         .font: UIFont.boldSystemFont(ofSize: 18),
-        .foregroundColor: theme.titleText
+        .foregroundColor: isColorEnabled ? theme.titleText : defaultTitleText
     ]
     
     // 固定页面宽度和边距
@@ -255,12 +262,15 @@ class PreviewViewController: UIViewController {
         return
     }
     
-    // 填充背景色
-    context.setFillColor(theme.background.cgColor)
+    let contentBackgroundColor = isColorEnabled ? theme.contentBackground : defaultContentBackground
+    
+    context.setFillColor((isColorEnabled ? theme.background : defaultBackground).cgColor)
+    
+    // 填充背景色才·
     context.fill(CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: totalHeight))
     
     // 绘制问题内容框背景
-    context.setFillColor(theme.contentBackground.cgColor)
+    context.setFillColor(contentBackgroundColor.cgColor)
     let questionBoxRect = CGRect(
         x: margin/2, 
         y: questionBoxY, 
@@ -272,7 +282,7 @@ class PreviewViewController: UIViewController {
     context.fillPath()
     
     // 绘制答案内容框背景
-    context.setFillColor(theme.contentBackground.cgColor)
+    context.setFillColor(contentBackgroundColor.cgColor)
     let answerBoxRect = CGRect(
         x: margin/2, 
         y: answerBoxY, 
@@ -350,23 +360,27 @@ class PreviewViewController: UIViewController {
   }
   
   private func applyThemeBasedOnContent() {
-    // 分析文本情感并选择主题
+    guard isColorEnabled else {
+        view.backgroundColor = .white
+        contentView.backgroundColor = .white
+        scrollView.backgroundColor = .white
+        questionTitleLabel.textColor = .black
+        answerTitleLabel.textColor = .black
+        return
+    }
+    
     let theme = ThemeManager.shared.selectTheme(questionText: questionText, answerText: answerText)
     
-    // 显示一个提示消息，表明正在应用AI主题
     let toast = UIAlertController(title: "AI主题", message: "正在应用智能配色...", preferredStyle: .alert)
     present(toast, animated: true)
     
-    // 延迟一下，让用户感知到AI在"思考"
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
       guard let self = self else { return }
       
-      // 应用主题到视图元素
       self.view.backgroundColor = theme.background
       self.contentView.backgroundColor = theme.background
       self.scrollView.backgroundColor = theme.background
       
-      // 标题样式
       self.questionTitleLabel.textColor = theme.titleText
       self.answerTitleLabel.textColor = theme.titleText
       
