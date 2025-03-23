@@ -11,7 +11,7 @@ import Combine
 import CombineCocoa
 
 class ViewController: UIViewController, UITextViewDelegate {
-
+  
   // UI 组件
   private let questionLabel = UILabel()
   private let questionTextView = UITextView()
@@ -55,7 +55,7 @@ class ViewController: UIViewController, UITextViewDelegate {
         self?.clearAll()
       }
       .store(in: &cancellables)
-      
+    
     // 监听 TextView 的文本变化
     questionTextView.textPublisher
       .sink { [weak self] text in
@@ -71,7 +71,7 @@ class ViewController: UIViewController, UITextViewDelegate {
         }
       }
       .store(in: &cancellables)
-      
+    
     answerTextView.textPublisher
       .sink { [weak self] text in
         guard let self = self else { return }
@@ -112,7 +112,7 @@ class ViewController: UIViewController, UITextViewDelegate {
         }
       }
       .store(in: &cancellables)
-      
+    
     NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification, object: answerTextView)
       .sink { [weak self] _ in
         guard let self = self else { return }
@@ -142,7 +142,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     answerTextView.text = answerPlaceholder
     answerTextView.textColor = .lightGray
   }
-
+  
   private func setupUI() {
     view.backgroundColor = .white
     
@@ -225,8 +225,16 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(44)
       make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-20)
     }
+        
+        // 添加开关事件监听
+        colorToggle.addTarget(self, action: #selector(toggleColorAnalysis), for: .valueChanged)
+    }
+    
+    @objc private func toggleColorAnalysis() {
+        isColorEnabled = colorToggle.isOn
+    }
   }
-
+  
   private func generateImage() {
     // 获取问题和答案文本
     var questionText = questionTextView.text ?? ""
@@ -234,29 +242,25 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 如果文本是占位符，则视为空字符串
     if questionText == questionPlaceholder {
-        questionText = ""
+      questionText = ""
     }
     
     if answerText == answerPlaceholder {
-        answerText = ""
+      answerText = ""
     }
     
     // 验证输入
     if questionText.isEmpty {
-        showToast(message: "请输入问题")
-        return
+      showToast(message: "请输入问题")
+    // 创建预览控制器并推送
+    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText)
     }
-    
-    if answerText.isEmpty {
-        showToast(message: "请输入答案")
-        return
-    }
-    
+  }
     // 创建预览控制器并推送
     let previewVC = PreviewViewController(questionText: questionText, answerText: answerText)
     navigationController?.pushViewController(previewVC, animated: true)
   }
-
+  
   private func clearAll() {
     // 清空问题和答案内容，并显示占位文本
     setupQuestionPlaceholder()
@@ -277,7 +281,7 @@ class ViewController: UIViewController, UITextViewDelegate {
         tapGesture.addTarget(self, action: #selector(ViewController.handleTap))
       }
       .store(in: &cancellables)
-      
+    
     NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
       .sink { [weak self] _ in
         guard let self = self else { return }
@@ -337,9 +341,9 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 淡出动画
     UIView.animate(withDuration: 0.5, delay: 1.5, options: .curveEaseOut, animations: {
-        toastLabel.alpha = 0.0
+      toastLabel.alpha = 0.0
     }, completion: { _ in
-        toastLabel.removeFromSuperview()
+      toastLabel.removeFromSuperview()
     })
   }
   

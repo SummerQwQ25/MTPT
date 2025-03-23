@@ -23,5 +23,7 @@
 	<string>需要访问您的相册以保存图片</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>需要访问您的相册以保存图片</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>用于分析文本情感</string>
 </dict>
 </plist>
