@@ -19,5 +19,9 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要访问您的相册以保存图片</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问您的相册以保存图片</string>
 </dict>
 </plist>

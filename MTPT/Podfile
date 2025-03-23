@@ -8,6 +8,8 @@ target 'MTPT' do
   # Pods for MTPT
   pod 'LookinServer', :subspecs => ['Swift'], :configurations => ['Debug']
   pod 'SnapKit', '~> 5.0.0'
+  pod "MarkdownView"
+  pod 'CombineCocoa'
 
   target 'MTPTTests' do
     inherit! :search_paths

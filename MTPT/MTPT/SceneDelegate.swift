@@ -17,10 +17,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
       // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
       guard let windowScene = (scene as? UIWindowScene) else { return }
-      let window = UIWindow(windowScene: windowScene)
-      window.rootViewController = ViewController()
-      window.makeKeyAndVisible()
-      self.window = window
+      
+      // 创建窗口并设置场景
+      window = UIWindow(windowScene: windowScene)
+      
+      // 创建 ViewController 并包装在 UINavigationController 中
+      let viewController = ViewController()
+      let navigationController = UINavigationController(rootViewController: viewController)
+      
+      // 设置导航栏样式（可选）
+      navigationController.navigationBar.prefersLargeTitles = false
+      
+      // 设置根视图控制器
+      window?.rootViewController = navigationController
+      window?.makeKeyAndVisible()
   }
 
   func sceneDidDisconnect(_ scene: UIScene) {
