@@ -12,6 +12,7 @@ class PreviewViewController: UIViewController {
   private let answerMarkdownView = MarkdownView()
   private let questionTitleLabel = UILabel()
   private let answerTitleLabel = UILabel()
+  private let emotionLabel = UILabel() // 添加情绪标签
   
   // 内容
   private var questionText: String
@@ -26,6 +27,7 @@ class PreviewViewController: UIViewController {
     return markdownsRendered >= 2  // 两个 MarkdownView 都加载完成
   }
   
+  // 是否启用颜色 (只用于存储状态，不再影响UI)
   private var isColorEnabled: Bool
   
   // 初始化方法，传入问题和答案内容
@@ -43,7 +45,7 @@ class PreviewViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     setupUI()
-    applyThemeBasedOnContent()
+    addEmotionLabel() // 添加情绪标签
     loadMarkdownContent()
     enableSwipeBackGesture()
   }
@@ -68,22 +70,24 @@ class PreviewViewController: UIViewController {
       action: #selector(saveImage)
     )
     
-    // 设置 ScrollView
+    // 设置滚动视图
     view.addSubview(scrollView)
     scrollView.snp.makeConstraints { make in
-      make.edges.equalToSuperview()
+      make.edges.equalTo(view.safeAreaLayoutGuide)
     }
     
-    // 设置 ContentView
+    // 内容视图
     scrollView.addSubview(contentView)
     contentView.snp.makeConstraints { make in
       make.edges.equalToSuperview()
-      make.width.equalTo(scrollView)
+      make.width.equalToSuperview()
+      // 这里不设置高度，由内容决定
     }
     
     // 问题标题
     questionTitleLabel.text = "问题"
     questionTitleLabel.font = .boldSystemFont(ofSize: 18)
+    questionTitleLabel.textColor = .black
     contentView.addSubview(questionTitleLabel)
     questionTitleLabel.snp.makeConstraints { make in
       make.top.equalToSuperview().offset(20)
@@ -92,6 +96,8 @@ class PreviewViewController: UIViewController {
     }
     
     // 问题 Markdown 视图
+    questionMarkdownView.isOpaque = false
+    questionMarkdownView.backgroundColor = .clear
     contentView.addSubview(questionMarkdownView)
     questionMarkdownView.snp.makeConstraints { make in
       make.top.equalTo(questionTitleLabel.snp.bottom).offset(10)
@@ -104,6 +110,7 @@ class PreviewViewController: UIViewController {
     // 答案标题
     answerTitleLabel.text = "答案"
     answerTitleLabel.font = .boldSystemFont(ofSize: 18)
+    answerTitleLabel.textColor = .black
     contentView.addSubview(answerTitleLabel)
     answerTitleLabel.snp.makeConstraints { make in
       make.top.equalTo(questionMarkdownView.snp.bottom).offset(30)
@@ -119,12 +126,39 @@ class PreviewViewController: UIViewController {
       make.trailing.equalToSuperview().offset(-20)
       // 保存高度约束的引用以便后续更新
       answerMarkdownViewHeight = make.height.equalTo(50).constraint    // 初始高度
-      make.bottom.equalToSuperview().offset(-30)
     }
     
     // 禁用滚动，以便获取完整内容
     questionMarkdownView.isScrollEnabled = false
     answerMarkdownView.isScrollEnabled = false
+  }
+  
+  // 添加情绪标签
+  private func addEmotionLabel() {
+    // 无论是否显示情感标签，都需要确保有正确的底部约束
+    if isColorEnabled {
+        // 用户启用了情感分析，添加标签
+        emotionLabel.font = .italicSystemFont(ofSize: 12)
+        emotionLabel.textColor = .gray
+        emotionLabel.textAlignment = .right
+        
+        // 分析情感
+        let emotion = ThemeManager.shared.analyzeEmotion(text: answerText)
+        emotionLabel.text = "情感分析: \(emotion.description)"
+        
+        contentView.addSubview(emotionLabel)
+        emotionLabel.snp.makeConstraints { make in
+            make.top.equalTo(answerMarkdownView.snp.bottom).offset(10)
+            make.trailing.equalToSuperview().offset(-20)
+            make.bottom.equalToSuperview().offset(-10)
+        }
+    } else {
+        // 用户关闭了情感分析，不添加标签，但需要添加底部约束
+        // 为 answerMarkdownView 添加底部约束
+        answerMarkdownView.snp.makeConstraints { make in
+            make.bottom.equalToSuperview().offset(-20)
+        }
+    }
   }
   
   private func loadMarkdownContent() {
@@ -226,7 +260,6 @@ class PreviewViewController: UIViewController {
         // 处理生成的图像
         loadingAlert.dismiss(animated: true) {
             if let image = image {
-                // 修改这一行：正确使用 UIImageWriteToSavedPhotosAlbum
                 UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
             } else {
                 // 截图失败
@@ -236,7 +269,7 @@ class PreviewViewController: UIViewController {
     }
   }
   
-  // 添加新的回调方法，确保签名与 UIImageWriteToSavedPhotosAlbum 所需的回调格式一致
+  // 处理图片保存结果
   @objc func imageSaved(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
     if let error = error {
         // 保存失败
@@ -277,105 +310,13 @@ class PreviewViewController: UIViewController {
       
       // 设置滑动手势代理 (如果需要)
       navigationController.interactivePopGestureRecognizer?.delegate = nil
-      
-      // 确保滑动手势有效区域
-      scrollView.panGestureRecognizer.require(toFail: navigationController.interactivePopGestureRecognizer!)
     }
   }
-  
-  private func applyThemeBasedOnContent() {
-    guard isColorEnabled else {
-        view.backgroundColor = .white
-        contentView.backgroundColor = .white
-        scrollView.backgroundColor = .white
-        questionTitleLabel.textColor = .black
-        answerTitleLabel.textColor = .black
-        return
+}
+
+// 扩展 MarkdownView 来访问内部的 WebView
+extension MarkdownView {
+    var internalWebView: WKWebView? {
+        return subviews.first as? WKWebView
     }
-    
-    let theme = ThemeManager.shared.selectTheme(questionText: questionText, answerText: answerText)
-    
-    let toast = UIAlertController(title: "AI主题", message: "正在应用智能配色...", preferredStyle: .alert)
-    present(toast, animated: true)
-    
-    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-      guard let self = self else { return }
-      
-      self.view.backgroundColor = theme.background
-      self.contentView.backgroundColor = theme.background
-      self.scrollView.backgroundColor = theme.background
-      
-      self.questionTitleLabel.textColor = theme.titleText
-      self.answerTitleLabel.textColor = theme.titleText
-      
-      // MarkdownView 样式
-      // 由于MarkdownView是WebView，需要通过JavaScript注入CSS
-      let cssStyle = """
-                body { 
-                    background-color: \(self.hexString(from: theme.contentBackground)) !important; 
-                    color: \(self.hexString(from: theme.contentText)) !important; 
-                }
-                code {
-                    background-color: \(self.hexString(from: theme.borderColor)) !important;
-                }
-            """
-      
-      self.questionMarkdownView.load(markdown: self.questionText, css: cssStyle)
-      self.answerMarkdownView.load(markdown: self.answerText, css: cssStyle)
-      
-      // 关闭提示
-      toast.dismiss(animated: true) {
-        // 显示应用了什么主题
-        let emotion = ThemeManager.shared.analyzeEmotion(text: self.answerText)
-        self.showToast(message: "已应用\(emotion.description)情绪主题")
-      }
-    }
-  }
-  
-  private func hexString(from color: UIColor) -> String {
-    var r: CGFloat = 0
-    var g: CGFloat = 0
-    var b: CGFloat = 0
-    var a: CGFloat = 0
-    
-    color.getRed(&r, green: &g, blue: &b, alpha: &a)
-    
-    return String(
-      format: "#%02X%02X%02X",
-      Int(r * 255),
-      Int(g * 255),
-      Int(b * 255)
-    )
-  }
-  
-  private func showToast(message: String) {
-    let toastLabel = UILabel()
-    toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-    toastLabel.textColor = UIColor.white
-    toastLabel.textAlignment = .center
-    toastLabel.font = UIFont.systemFont(ofSize: 14)
-    toastLabel.text = message
-    toastLabel.alpha = 1.0
-    toastLabel.layer.cornerRadius = 10
-    toastLabel.clipsToBounds = true
-    
-    let textSize = toastLabel.intrinsicContentSize
-    let labelWidth = min(textSize.width + 40, view.frame.width - 40)
-    let labelHeight: CGFloat = 35
-    
-    toastLabel.frame = CGRect(
-      x: view.frame.width/2 - labelWidth/2,
-      y: view.frame.height/2 - labelHeight/2,
-      width: labelWidth,
-      height: labelHeight
-    )
-    
-    view.addSubview(toastLabel)
-    
-    UIView.animate(withDuration: 0.5, delay: 1.5, options: .curveEaseOut, animations: {
-      toastLabel.alpha = 0.0
-    }, completion: { _ in
-      toastLabel.removeFromSuperview()
-    })
-  }
 }

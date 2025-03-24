@@ -156,7 +156,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 添加开关标题
     let toggleTitle = UILabel()
-    toggleTitle.text = "自动添加背景颜色"
+    toggleTitle.text = "AI分析答案情绪"
     toggleTitle.font = .systemFont(ofSize: 14)
     view.addSubview(toggleTitle)
     
