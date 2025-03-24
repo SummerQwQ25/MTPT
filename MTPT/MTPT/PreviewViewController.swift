@@ -173,15 +173,61 @@ class PreviewViewController: UIViewController {
     let loadingAlert = UIAlertController(title: "处理中", message: "正在生成图片...", preferredStyle: .alert)
     present(loadingAlert, animated: true)
     
-    // 获取当前主题（用于保存带情感色彩的图片）
-    let theme = ThemeManager.shared.selectTheme(questionText: questionText, answerText: answerText)
+    // 确保两个 markdown 视图都已经渲染完成
+    if markdownsRendered < 2 {
+        // 如果尚未完成渲染，等待一段时间后重试
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            loadingAlert.dismiss(animated: true) {
+                self?.saveImage()
+            }
+        }
+        return
+    }
     
-    // 生成截图
-    generateTextImage(withTheme: theme, isColorEnabled: isColorEnabled) { image in
+    // 使用 drawHierarchy 来生成完整内容截图
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        guard let self = self else { return }
+        
+        // 保存原始滚动位置
+        let originalOffset = self.scrollView.contentOffset
+        
+        // 获取完整内容大小
+        let contentSize = self.scrollView.contentSize
+        
+        // 创建适当大小的位图上下文
+        UIGraphicsBeginImageContextWithOptions(contentSize, false, UIScreen.main.scale)
+        
+        // 保存原始剪裁设置
+        let oldClipsToBounds = self.scrollView.clipsToBounds
+        self.scrollView.clipsToBounds = false
+        
+        // 处理每个子视图
+        for subview in self.contentView.subviews {
+            // 计算子视图在整个内容中的绝对位置
+            let rect = subview.convert(subview.bounds, to: self.contentView)
+            
+            // 将每个子视图绘制到上下文
+            if let context = UIGraphicsGetCurrentContext() {
+                context.saveGState()
+                context.translateBy(x: rect.origin.x, y: rect.origin.y)
+                subview.layer.render(in: context)
+                context.restoreGState()
+            }
+        }
+        
+        // 获取最终图像
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        // 恢复原始设置
+        self.scrollView.clipsToBounds = oldClipsToBounds
+        self.scrollView.setContentOffset(originalOffset, animated: false)
+        
+        // 处理生成的图像
         loadingAlert.dismiss(animated: true) {
             if let image = image {
-                // 图片生成成功，保存到相册
-                UIImageWriteToSavedPhotosAlbum(image, self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+                // 修改这一行：正确使用 UIImageWriteToSavedPhotosAlbum
+                UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
             } else {
                 // 截图失败
                 self.showAlert(title: "截图失败", message: "无法生成图片，请稍后再试")
@@ -190,127 +236,27 @@ class PreviewViewController: UIViewController {
     }
   }
   
-  private func generateTextImage(withTheme theme: ThemeColors, isColorEnabled: Bool, completion: @escaping (UIImage?) -> Void) {
-    let defaultContentText = UIColor.black
-    let defaultTitleText = UIColor.black
-    let defaultBackground = UIColor.white
-    let defaultContentBackground = UIColor.white
-    
-    let questionAttributes: [NSAttributedString.Key: Any] = [
-        .font: UIFont.systemFont(ofSize: 16),
-        .foregroundColor: isColorEnabled ? theme.contentText : defaultContentText
-    ]
-    let questionTitleAttributes: [NSAttributedString.Key: Any] = [
-        .font: UIFont.boldSystemFont(ofSize: 18),
-        .foregroundColor: isColorEnabled ? theme.titleText : defaultTitleText
-    ]
-    
-    // 固定页面宽度和边距
-    let pageWidth: CGFloat = UIScreen.main.bounds.width - 40
-    let margin: CGFloat = 20
-    let padding: CGFloat = 8  // 添加内边距
-    
-    // 计算问题文本的大小
-    let questionTitle = NSAttributedString(string: "问题", attributes: questionTitleAttributes)
-    let questionString = NSAttributedString(string: questionText, attributes: questionAttributes)
-    
-    let questionTitleSize = questionTitle.boundingRect(
-        with: CGSize(width: pageWidth, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        context: nil
-    ).size
-    
-    let questionSize = questionString.boundingRect(
-        with: CGSize(width: pageWidth - padding*2, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        context: nil
-    ).size
-    
-    // 答案部分
-    let answerTitle = NSAttributedString(string: "答案", attributes: questionTitleAttributes)
-    let answerString = NSAttributedString(string: answerText, attributes: questionAttributes)
-    
-    let answerTitleSize = answerTitle.boundingRect(
-        with: CGSize(width: pageWidth, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        context: nil
-    ).size
-    
-    let answerSize = answerString.boundingRect(
-        with: CGSize(width: pageWidth - padding*2, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        context: nil
-    ).size
-    
-    // 计算内容位置
-    let questionTitleY = margin
-    let questionBoxY = questionTitleY + questionTitleSize.height + margin/2
-    let questionContentY = questionBoxY + padding
-    
-    let answerTitleY = questionBoxY + questionSize.height + padding*2 + margin
-    let answerBoxY = answerTitleY + answerTitleSize.height + margin/2
-    let answerContentY = answerBoxY + padding
-    
-    // 计算图像总高度
-    let totalHeight = answerBoxY + answerSize.height + padding*2 + margin
-    
-    // 创建绘图上下文
-    UIGraphicsBeginImageContextWithOptions(CGSize(width: UIScreen.main.bounds.width, height: totalHeight), false, UIScreen.main.scale)
-    guard let context = UIGraphicsGetCurrentContext() else {
-        UIGraphicsEndImageContext()
-        completion(nil)
-        return
+  // 添加新的回调方法，确保签名与 UIImageWriteToSavedPhotosAlbum 所需的回调格式一致
+  @objc func imageSaved(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+    if let error = error {
+        // 保存失败
+        let alertController = UIAlertController(
+            title: "保存失败",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "好的", style: .default))
+        present(alertController, animated: true)
+    } else {
+        // 保存成功
+        let alertController = UIAlertController(
+            title: "保存成功",
+            message: "图片已保存到相册",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "好的", style: .default))
+        present(alertController, animated: true)
     }
-    
-    let contentBackgroundColor = isColorEnabled ? theme.contentBackground : defaultContentBackground
-    
-    context.setFillColor((isColorEnabled ? theme.background : defaultBackground).cgColor)
-    
-    // 填充背景色才·
-    context.fill(CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: totalHeight))
-    
-    // 绘制问题内容框背景
-    context.setFillColor(contentBackgroundColor.cgColor)
-    let questionBoxRect = CGRect(
-        x: margin/2, 
-        y: questionBoxY, 
-        width: UIScreen.main.bounds.width - margin, 
-        height: questionSize.height + padding*2
-    )
-    let questionPath = UIBezierPath(roundedRect: questionBoxRect, cornerRadius: 8)
-    context.addPath(questionPath.cgPath)
-    context.fillPath()
-    
-    // 绘制答案内容框背景
-    context.setFillColor(contentBackgroundColor.cgColor)
-    let answerBoxRect = CGRect(
-        x: margin/2, 
-        y: answerBoxY, 
-        width: UIScreen.main.bounds.width - margin, 
-        height: answerSize.height + padding*2
-    )
-    let answerPath = UIBezierPath(roundedRect: answerBoxRect, cornerRadius: 8)
-    context.addPath(answerPath.cgPath)
-    context.fillPath()
-    
-    // 绘制问题标题
-    questionTitle.draw(at: CGPoint(x: margin, y: questionTitleY))
-    
-    // 绘制问题内容 - 位置调整考虑内边距
-    questionString.draw(in: CGRect(x: margin + padding, y: questionContentY, width: pageWidth - padding*2, height: questionSize.height))
-    
-    // 绘制答案标题
-    answerTitle.draw(at: CGPoint(x: margin, y: answerTitleY))
-    
-    // 绘制答案内容 - 位置调整考虑内边距
-    answerString.draw(in: CGRect(x: margin + padding, y: answerContentY, width: pageWidth - padding*2, height: answerSize.height))
-    
-    // 获取生成的图像
-    let image = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-    
-    // 返回结果
-    completion(image)
   }
   
   private func showAlert(title: String, message: String) {
@@ -321,28 +267,6 @@ class PreviewViewController: UIViewController {
     )
     alertController.addAction(UIAlertAction(title: "好的", style: .default))
     present(alertController, animated: true)
-  }
-  
-  @objc private func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
-    if let error = error {
-      // 保存失败
-      let alertController = UIAlertController(
-        title: "保存失败",
-        message: error.localizedDescription,
-        preferredStyle: .alert
-      )
-      alertController.addAction(UIAlertAction(title: "好的", style: .default))
-      present(alertController, animated: true)
-    } else {
-      // 保存成功
-      let alertController = UIAlertController(
-        title: "保存成功",
-        message: "图片已保存到相册",
-        preferredStyle: .alert
-      )
-      alertController.addAction(UIAlertAction(title: "好的", style: .default))
-      present(alertController, animated: true)
-    }
   }
   
   private func enableSwipeBackGesture() {
