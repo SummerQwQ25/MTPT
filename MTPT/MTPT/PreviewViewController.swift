@@ -56,7 +56,7 @@ class PreviewViewController: UIViewController {
     
     // 添加返回按钮
     navigationItem.leftBarButtonItem = UIBarButtonItem(
-      title: "Return",
+      title: "Back",
       style: .plain,
       target: self,
       action: #selector(dismissPreview)
