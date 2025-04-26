@@ -27,8 +27,8 @@ class ViewController: UIViewController, UITextViewDelegate {
   private var cancellables = Set<AnyCancellable>()
   
   // Placeholder 文本
-  private let questionPlaceholder = "请输入问题"
-  private let answerPlaceholder = "请输入答案"
+  private let questionPlaceholder = "Please enter the question"
+  private let answerPlaceholder = "Please enter the answer"
   
   // 添加手势识别器
   private lazy var tapGesture = UITapGestureRecognizer()
@@ -150,13 +150,13 @@ class ViewController: UIViewController, UITextViewDelegate {
     view.backgroundColor = .white
     
     // 设置问题标签
-    questionLabel.text = "问题"
+    questionLabel.text = "Question"
     questionLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(questionLabel)
     
     // 添加开关标题
     let toggleTitle = UILabel()
-    toggleTitle.text = "AI分析答案情绪"
+    toggleTitle.text = "AI analyzes"
     toggleTitle.font = .systemFont(ofSize: 14)
     view.addSubview(toggleTitle)
     
@@ -195,7 +195,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
-    answerLabel.text = "答案"
+    answerLabel.text = "Answer"
     answerLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(answerLabel)
     
@@ -218,7 +218,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
-    generateButton.setTitle("生成图片", for: .normal)
+    generateButton.setTitle("Generate Image", for: .normal)
     generateButton.backgroundColor = .systemBlue
     generateButton.setTitleColor(.white, for: .normal)
     generateButton.layer.cornerRadius = 5
@@ -231,7 +231,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(44)
     }
     
-    clearButton.setTitle("清空", for: .normal)
+    clearButton.setTitle("Clear", for: .normal)
     clearButton.backgroundColor = .systemGray
     clearButton.setTitleColor(.white, for: .normal)
     clearButton.layer.cornerRadius = 5
@@ -262,12 +262,12 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 验证输入
     if questionText.isEmpty {
-      showToast(message: "请输入问题")
+      showToast(message: "Please enter the question")
       return
     }
     
     if answerText.isEmpty {
-      showToast(message: "请输入答案")
+      showToast(message: "Please enter the answer")
       return
     }
     

@@ -51,12 +51,12 @@ class PreviewViewController: UIViewController {
   }
   
   private func setupUI() {
-    title = "预览"
+    title = "Preview"
     view.backgroundColor = .white
     
     // 添加返回按钮
     navigationItem.leftBarButtonItem = UIBarButtonItem(
-      title: "返回",
+      title: "Return",
       style: .plain,
       target: self,
       action: #selector(dismissPreview)
@@ -64,7 +64,7 @@ class PreviewViewController: UIViewController {
     
     // 添加保存按钮
     navigationItem.rightBarButtonItem = UIBarButtonItem(
-      title: "保存",
+      title: "Save",
       style: .plain,
       target: self,
       action: #selector(saveImage)
@@ -85,7 +85,7 @@ class PreviewViewController: UIViewController {
     }
     
     // 问题标题
-    questionTitleLabel.text = "问题"
+    questionTitleLabel.text = "Question"
     questionTitleLabel.font = .boldSystemFont(ofSize: 18)
     questionTitleLabel.textColor = .black
     contentView.addSubview(questionTitleLabel)
@@ -108,7 +108,7 @@ class PreviewViewController: UIViewController {
     }
     
     // 答案标题
-    answerTitleLabel.text = "答案"
+    answerTitleLabel.text = "Answer"
     answerTitleLabel.font = .boldSystemFont(ofSize: 18)
     answerTitleLabel.textColor = .black
     contentView.addSubview(answerTitleLabel)
@@ -144,7 +144,7 @@ class PreviewViewController: UIViewController {
         
         // 分析情感
         let emotion = ThemeManager.shared.analyzeEmotion(text: answerText)
-        emotionLabel.text = "情感分析: \(emotion.description)"
+        emotionLabel.text = "Emotional Analysis: \(emotion.description)"
         
         contentView.addSubview(emotionLabel)
         emotionLabel.snp.makeConstraints { make in
@@ -204,7 +204,7 @@ class PreviewViewController: UIViewController {
   
   @objc private func saveImage() {
     // 显示一个加载指示器
-    let loadingAlert = UIAlertController(title: "处理中", message: "正在生成图片...", preferredStyle: .alert)
+    let loadingAlert = UIAlertController(title: "Processing", message: "The image is being generated...", preferredStyle: .alert)
     present(loadingAlert, animated: true)
     
     // 确保两个 markdown 视图都已经渲染完成
@@ -263,7 +263,7 @@ class PreviewViewController: UIViewController {
                 UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
             } else {
                 // 截图失败
-                self.showAlert(title: "截图失败", message: "无法生成图片，请稍后再试")
+                self.showAlert(title: "The screenshot failed", message: "Unable to generate the image. Please try again later.")
             }
         }
     }
@@ -274,20 +274,20 @@ class PreviewViewController: UIViewController {
     if let error = error {
         // 保存失败
         let alertController = UIAlertController(
-            title: "保存失败",
+            title: "Save failed",
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alertController.addAction(UIAlertAction(title: "好的", style: .default))
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
         present(alertController, animated: true)
     } else {
         // 保存成功
         let alertController = UIAlertController(
-            title: "保存成功",
-            message: "图片已保存到相册",
+            title: "Save successfully",
+            message: "The image has been saved to the photo album.",
             preferredStyle: .alert
         )
-        alertController.addAction(UIAlertAction(title: "好的", style: .default))
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
         present(alertController, animated: true)
     }
   }
@@ -298,7 +298,7 @@ class PreviewViewController: UIViewController {
       message: message,
       preferredStyle: .alert
     )
-    alertController.addAction(UIAlertAction(title: "好的", style: .default))
+    alertController.addAction(UIAlertAction(title: "OK", style: .default))
     present(alertController, animated: true)
   }
   
