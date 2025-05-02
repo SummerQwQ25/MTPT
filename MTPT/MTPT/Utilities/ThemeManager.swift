@@ -8,9 +8,9 @@ enum EmotionType {
   
   var description: String {
     switch self {
-    case .positive: return "积极"
-    case .negative: return "消极"
-    case .neutral: return "中性"
+    case .positive: return "Positive"
+    case .negative: return "Negative"
+    case .neutral: return "Neutral"
     }
   }
 }
