@@ -14,6 +14,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
+    
+    // 全局强制使用浅色模式，防止系统暗黑模式影响应用显示
+    UIApplication.shared.windows.forEach { window in
+      window.overrideUserInterfaceStyle = .light
+    }
+    
     return true
   }
 

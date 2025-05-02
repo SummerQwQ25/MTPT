@@ -37,6 +37,8 @@ class ViewController: UIViewController, UITextViewDelegate {
     super.viewDidLoad()
     // 设置标题
     title = "MTPT"
+    // 强制当前控制器使用浅色模式
+    overrideUserInterfaceStyle = .light
     // Do any additional setup after loading the view.
     setupUI()
     setupBindings()
@@ -219,7 +221,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     }
     
     generateButton.setTitle("Generate Image", for: .normal)
-    generateButton.backgroundColor = .systemBlue
+    generateButton.backgroundColor = .black
     generateButton.setTitleColor(.white, for: .normal)
     generateButton.layer.cornerRadius = 5
     view.addSubview(generateButton)

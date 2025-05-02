@@ -28,6 +28,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       // 设置导航栏样式（可选）
       navigationController.navigationBar.prefersLargeTitles = false
       
+      // 强制使用浅色模式，防止系统暗黑模式影响应用显示
+      window?.overrideUserInterfaceStyle = .light
+      
       // 设置根视图控制器
       window?.rootViewController = navigationController
       window?.makeKeyAndVisible()

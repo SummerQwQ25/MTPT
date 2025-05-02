@@ -44,6 +44,15 @@ class PreviewViewController: UIViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    // 强制当前控制器使用浅色模式
+    overrideUserInterfaceStyle = .light
+    
+    // 设置导航栏返回按钮和标题为黑色
+    if let navigationBar = navigationController?.navigationBar {
+      navigationBar.tintColor = .black // 返回按钮颜色
+      navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black] // 标题颜色
+    }
+    
     setupUI()
     addEmotionLabel() // 添加情绪标签
     loadMarkdownContent()
@@ -54,21 +63,19 @@ class PreviewViewController: UIViewController {
     title = "Preview"
     view.backgroundColor = .white
     
-    // 添加返回按钮
-    navigationItem.leftBarButtonItem = UIBarButtonItem(
-      title: "Back",
-      style: .plain,
-      target: self,
-      action: #selector(dismissPreview)
-    )
+    // 不再添加自定义返回按钮，使用系统默认返回按钮
     
-    // 添加保存按钮
-    navigationItem.rightBarButtonItem = UIBarButtonItem(
-      title: "Save",
-      style: .plain,
-      target: self,
-      action: #selector(saveImage)
-    )
+    // 添加保存按钮，使用黑色按钮样式
+    let saveButton = UIButton(type: .system)
+    saveButton.setTitle("Save", for: .normal)
+    saveButton.setTitleColor(.white, for: .normal)
+    saveButton.backgroundColor = .black
+    saveButton.layer.cornerRadius = 5
+    saveButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
+    saveButton.addTarget(self, action: #selector(saveImage), for: .touchUpInside)
+    
+    let customBarItem = UIBarButtonItem(customView: saveButton)
+    navigationItem.rightBarButtonItem = customBarItem
     
     // 设置滚动视图
     view.addSubview(scrollView)
@@ -196,10 +203,6 @@ class PreviewViewController: UIViewController {
     // 加载 Markdown 内容
     questionMarkdownView.load(markdown: questionText)
     answerMarkdownView.load(markdown: answerText)
-  }
-  
-  @objc private func dismissPreview() {
-    navigationController?.popViewController(animated: true)
   }
   
   @objc private func saveImage() {
