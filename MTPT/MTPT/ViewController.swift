@@ -159,7 +159,8 @@ class ViewController: UIViewController, UITextViewDelegate {
     // 添加开关标题
     let toggleTitle = UILabel()
     toggleTitle.text = "AI analyzes"
-    toggleTitle.font = .systemFont(ofSize: 14)
+    toggleTitle.font = .boldSystemFont(ofSize: 14)
+    toggleTitle.textColor = .black
     view.addSubview(toggleTitle)
     
     // 设置问题输入框
@@ -171,6 +172,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 设置切换开关
     colorToggle.isOn = true // 默认开启
+    colorToggle.onTintColor = .black // 设置激活状态的背景色为黑色
     view.addSubview(colorToggle)
     
     // 设置约束
