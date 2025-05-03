@@ -27,8 +27,8 @@ class ViewController: UIViewController, UITextViewDelegate {
   private var cancellables = Set<AnyCancellable>()
   
   // Placeholder 文本
-  private let questionPlaceholder = "Please enter the question"
-  private let answerPlaceholder = "Please enter the answer"
+  private let questionPlaceholder = NSLocalizedString("please_enter_question", comment: "Placeholder for question field")
+  private let answerPlaceholder = NSLocalizedString("please_enter_answer", comment: "Placeholder for answer field")
   
   // 添加手势识别器
   private lazy var tapGesture = UITapGestureRecognizer()
@@ -152,13 +152,13 @@ class ViewController: UIViewController, UITextViewDelegate {
     view.backgroundColor = .white
     
     // 设置问题标签
-    questionLabel.text = "Question"
+    questionLabel.text = NSLocalizedString("question", comment: "Question label")
     questionLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(questionLabel)
     
     // 添加开关标题
     let toggleTitle = UILabel()
-    toggleTitle.text = "AI analyzes"
+    toggleTitle.text = NSLocalizedString("ai_analyzes", comment: "AI analyzes toggle label")
     toggleTitle.font = .boldSystemFont(ofSize: 14)
     toggleTitle.textColor = .black
     view.addSubview(toggleTitle)
@@ -199,7 +199,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
-    answerLabel.text = "Answer"
+    answerLabel.text = NSLocalizedString("answer", comment: "Answer label")
     answerLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(answerLabel)
     
@@ -222,7 +222,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
-    generateButton.setTitle("Generate Image", for: .normal)
+    generateButton.setTitle(NSLocalizedString("generate_image", comment: "Generate image button"), for: .normal)
     generateButton.backgroundColor = .black
     generateButton.setTitleColor(.white, for: .normal)
     generateButton.layer.cornerRadius = 5
@@ -235,7 +235,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(44)
     }
     
-    clearButton.setTitle("Clear", for: .normal)
+    clearButton.setTitle(NSLocalizedString("clear", comment: "Clear button"), for: .normal)
     clearButton.backgroundColor = .systemGray
     clearButton.setTitleColor(.white, for: .normal)
     clearButton.layer.cornerRadius = 5
@@ -266,12 +266,12 @@ class ViewController: UIViewController, UITextViewDelegate {
     
     // 验证输入
     if questionText.isEmpty {
-      showToast(message: "Please enter the question")
+      showToast(message: NSLocalizedString("enter_question_warning", comment: "Warning for empty question"))
       return
     }
     
     if answerText.isEmpty {
-      showToast(message: "Please enter the answer")
+      showToast(message: NSLocalizedString("enter_answer_warning", comment: "Warning for empty answer"))
       return
     }
     

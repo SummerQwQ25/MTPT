@@ -2,6 +2,7 @@ import UIKit
 import SnapKit
 import MarkdownView
 import WebKit
+import Photos
 
 class PreviewViewController: UIViewController {
   
@@ -60,14 +61,14 @@ class PreviewViewController: UIViewController {
   }
   
   private func setupUI() {
-    title = "Preview"
+    title = NSLocalizedString("preview", comment: "Preview screen title")
     view.backgroundColor = .white
     
     // 不再添加自定义返回按钮，使用系统默认返回按钮
     
     // 添加保存按钮，使用黑色按钮样式
     let saveButton = UIButton(type: .system)
-    saveButton.setTitle("Save", for: .normal)
+    saveButton.setTitle(NSLocalizedString("save", comment: "Save button"), for: .normal)
     saveButton.setTitleColor(.white, for: .normal)
     saveButton.backgroundColor = .black
     saveButton.layer.cornerRadius = 5
@@ -92,7 +93,7 @@ class PreviewViewController: UIViewController {
     }
     
     // 问题标题
-    questionTitleLabel.text = "Question"
+    questionTitleLabel.text = NSLocalizedString("question", comment: "Question label")
     questionTitleLabel.font = .boldSystemFont(ofSize: 18)
     questionTitleLabel.textColor = .black
     contentView.addSubview(questionTitleLabel)
@@ -115,7 +116,7 @@ class PreviewViewController: UIViewController {
     }
     
     // 答案标题
-    answerTitleLabel.text = "Answer"
+    answerTitleLabel.text = NSLocalizedString("answer", comment: "Answer label")
     answerTitleLabel.font = .boldSystemFont(ofSize: 18)
     answerTitleLabel.textColor = .black
     contentView.addSubview(answerTitleLabel)
@@ -151,7 +152,8 @@ class PreviewViewController: UIViewController {
         
         // 分析情感
         let emotion = ThemeManager.shared.analyzeEmotion(text: answerText)
-        emotionLabel.text = "Emotional Analysis: \(emotion.description)"
+        let emotionText = String(format: NSLocalizedString("emotional_analysis", comment: "Emotional analysis label"), emotion.description)
+        emotionLabel.text = emotionText
         
         contentView.addSubview(emotionLabel)
         emotionLabel.snp.makeConstraints { make in
@@ -206,69 +208,165 @@ class PreviewViewController: UIViewController {
   }
   
   @objc private func saveImage() {
+    // 首先检查相册权限状态
+    let status = PHPhotoLibrary.authorizationStatus()
+    
+    // 检查当前语言是否为中文
+    let isChinese = Locale.current.languageCode == "zh"
+    
+    switch status {
+    case .authorized, .limited:
+      // 已授权，继续保存图片流程
+      self.proceedWithImageSaving()
+      
+    case .denied, .restricted:
+      // 权限被拒绝或受限，引导用户前往设置
+      let title = isChinese ? "无法访问相册" : "Photo Access Denied"
+      let message = isChinese ? "请在设置中开启相册访问权限，以便保存图片" : "Please enable photo access in Settings to save images"
+      let cancelText = isChinese ? "取消" : "Cancel"
+      let settingsText = isChinese ? "去设置" : "Settings"
+      
+      let alertController = UIAlertController(
+        title: title,
+        message: message,
+        preferredStyle: .alert
+      )
+      
+      // 添加"取消"按钮
+      alertController.addAction(UIAlertAction(
+        title: cancelText,
+        style: .cancel
+      ))
+      
+      // 添加"设置"按钮
+      alertController.addAction(UIAlertAction(
+        title: settingsText,
+        style: .default
+      ) { _ in
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+          UIApplication.shared.open(url)
+        }
+      })
+      
+      present(alertController, animated: true)
+      
+    case .notDetermined:
+      // 权限尚未确定，直接请求系统权限
+      PHPhotoLibrary.requestAuthorization { [weak self] status in
+        DispatchQueue.main.async {
+          if status == .authorized || status == .limited {
+            self?.proceedWithImageSaving()
+          } else if status == .denied || status == .restricted {
+            // 如果被拒绝，提示用户前往设置
+            let title = isChinese ? "无法访问相册" : "Photo Access Denied"
+            let message = isChinese ? "请在设置中开启相册访问权限，以便保存图片" : "Please enable photo access in Settings to save images"
+            let cancelText = isChinese ? "取消" : "Cancel"
+            let settingsText = isChinese ? "去设置" : "Settings"
+            
+            let alertController = UIAlertController(
+              title: title,
+              message: message,
+              preferredStyle: .alert
+            )
+            
+            // 添加"取消"按钮
+            alertController.addAction(UIAlertAction(
+              title: cancelText,
+              style: .cancel
+            ))
+            
+            // 添加"设置"按钮
+            alertController.addAction(UIAlertAction(
+              title: settingsText,
+              style: .default
+            ) { _ in
+              if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+              }
+            })
+            
+            self?.present(alertController, animated: true)
+          }
+        }
+      }
+      
+    @unknown default:
+      self.proceedWithImageSaving()
+    }
+  }
+  
+  // 将原始的保存图片逻辑提取到这个方法中
+  private func proceedWithImageSaving() {
     // 显示一个加载指示器
-    let loadingAlert = UIAlertController(title: "Processing", message: "The image is being generated...", preferredStyle: .alert)
+    let loadingAlert = UIAlertController(
+      title: NSLocalizedString("processing", comment: "Processing title"),
+      message: NSLocalizedString("generating_image", comment: "Image generation message"),
+      preferredStyle: .alert
+    )
     present(loadingAlert, animated: true)
     
     // 确保两个 markdown 视图都已经渲染完成
     if markdownsRendered < 2 {
-        // 如果尚未完成渲染，等待一段时间后重试
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            loadingAlert.dismiss(animated: true) {
-                self?.saveImage()
-            }
+      // 如果尚未完成渲染，等待一段时间后重试
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        loadingAlert.dismiss(animated: true) {
+          self?.proceedWithImageSaving()
         }
-        return
+      }
+      return
     }
     
     // 使用 drawHierarchy 来生成完整内容截图
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-        guard let self = self else { return }
+      guard let self = self else { return }
+      
+      // 保存原始滚动位置
+      let originalOffset = self.scrollView.contentOffset
+      
+      // 获取完整内容大小
+      let contentSize = self.scrollView.contentSize
+      
+      // 创建适当大小的位图上下文
+      UIGraphicsBeginImageContextWithOptions(contentSize, false, UIScreen.main.scale)
+      
+      // 保存原始剪裁设置
+      let oldClipsToBounds = self.scrollView.clipsToBounds
+      self.scrollView.clipsToBounds = false
+      
+      // 处理每个子视图
+      for subview in self.contentView.subviews {
+        // 计算子视图在整个内容中的绝对位置
+        let rect = subview.convert(subview.bounds, to: self.contentView)
         
-        // 保存原始滚动位置
-        let originalOffset = self.scrollView.contentOffset
-        
-        // 获取完整内容大小
-        let contentSize = self.scrollView.contentSize
-        
-        // 创建适当大小的位图上下文
-        UIGraphicsBeginImageContextWithOptions(contentSize, false, UIScreen.main.scale)
-        
-        // 保存原始剪裁设置
-        let oldClipsToBounds = self.scrollView.clipsToBounds
-        self.scrollView.clipsToBounds = false
-        
-        // 处理每个子视图
-        for subview in self.contentView.subviews {
-            // 计算子视图在整个内容中的绝对位置
-            let rect = subview.convert(subview.bounds, to: self.contentView)
-            
-            // 将每个子视图绘制到上下文
-            if let context = UIGraphicsGetCurrentContext() {
-                context.saveGState()
-                context.translateBy(x: rect.origin.x, y: rect.origin.y)
-                subview.layer.render(in: context)
-                context.restoreGState()
-            }
+        // 将每个子视图绘制到上下文
+        if let context = UIGraphicsGetCurrentContext() {
+          context.saveGState()
+          context.translateBy(x: rect.origin.x, y: rect.origin.y)
+          subview.layer.render(in: context)
+          context.restoreGState()
         }
-        
-        // 获取最终图像
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        // 恢复原始设置
-        self.scrollView.clipsToBounds = oldClipsToBounds
-        self.scrollView.setContentOffset(originalOffset, animated: false)
-        
-        // 处理生成的图像
-        loadingAlert.dismiss(animated: true) {
-            if let image = image {
-                UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
-            } else {
-                // 截图失败
-                self.showAlert(title: "The screenshot failed", message: "Unable to generate the image. Please try again later.")
-            }
+      }
+      
+      // 获取最终图像
+      let image = UIGraphicsGetImageFromCurrentImageContext()
+      UIGraphicsEndImageContext()
+      
+      // 恢复原始设置
+      self.scrollView.clipsToBounds = oldClipsToBounds
+      self.scrollView.setContentOffset(originalOffset, animated: false)
+      
+      // 处理生成的图像
+      loadingAlert.dismiss(animated: true) {
+        if let image = image {
+          UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+        } else {
+          // 截图失败
+          self.showAlert(
+            title: NSLocalizedString("screenshot_failed", comment: "Screenshot failed title"),
+            message: NSLocalizedString("generate_image_error", comment: "Image generation error message")
+          )
         }
+      }
     }
   }
   
@@ -277,20 +375,20 @@ class PreviewViewController: UIViewController {
     if let error = error {
         // 保存失败
         let alertController = UIAlertController(
-            title: "Save failed",
+            title: NSLocalizedString("save_failed", comment: "Save failed title"),
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: "OK button"), style: .default))
         present(alertController, animated: true)
     } else {
         // 保存成功
         let alertController = UIAlertController(
-            title: "Save successfully",
-            message: "The image has been saved to the photo album.",
+            title: NSLocalizedString("save_success", comment: "Save success title"),
+            message: NSLocalizedString("saved_to_album", comment: "Saved to album message"),
             preferredStyle: .alert
         )
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: "OK button"), style: .default))
         present(alertController, animated: true)
     }
   }
@@ -301,7 +399,7 @@ class PreviewViewController: UIViewController {
       message: message,
       preferredStyle: .alert
     )
-    alertController.addAction(UIAlertAction(title: "OK", style: .default))
+    alertController.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: "OK button"), style: .default))
     present(alertController, animated: true)
   }
   

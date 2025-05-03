@@ -15,10 +15,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
     
-    // 全局强制使用浅色模式，防止系统暗黑模式影响应用显示
-    UIApplication.shared.windows.forEach { window in
-      window.overrideUserInterfaceStyle = .light
+    // 使用iOS 15兼容的方式设置浅色模式
+    // 在iOS 15之前使用旧API，在iOS 15及之后使用新API
+    if #available(iOS 15.0, *) {
+      // iOS 15及以上使用新API
+      for scene in UIApplication.shared.connectedScenes {
+        if let windowScene = scene as? UIWindowScene {
+          for window in windowScene.windows {
+            window.overrideUserInterfaceStyle = .light
+          }
+        }
+      }
+    } else {
+      // iOS 15以下使用旧API
+      UIApplication.shared.windows.forEach { window in
+        window.overrideUserInterfaceStyle = .light
+      }
     }
+    
+    // 打印当前语言环境进行调试
+    let currentLocale = Locale.current
+    print("当前语言: \(currentLocale.identifier)")
+    print("首选语言: \(Locale.preferredLanguages)")
     
     return true
   }

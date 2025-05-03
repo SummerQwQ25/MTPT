@@ -8,9 +8,9 @@ enum EmotionType {
   
   var description: String {
     switch self {
-    case .positive: return "Positive"
-    case .negative: return "Negative"
-    case .neutral: return "Neutral"
+    case .positive: return NSLocalizedString("positive", comment: "Positive emotion")
+    case .negative: return NSLocalizedString("negative", comment: "Negative emotion")
+    case .neutral: return NSLocalizedString("neutral", comment: "Neutral emotion")
     }
   }
 }

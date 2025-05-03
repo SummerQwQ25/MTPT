@@ -1,0 +1,28 @@
+/* Main View Controller */
+"question" = "Question";
+"answer" = "Answer";
+"ai_analyzes" = "AI analyzes";
+"please_enter_question" = "Please enter the question";
+"please_enter_answer" = "Please enter the answer";
+"generate_image" = "Generate Image";
+"clear" = "Clear";
+"enter_question_warning" = "Please enter the question";
+"enter_answer_warning" = "Please enter the answer";
+
+/* Preview View Controller */
+"preview" = "Preview";
+"save" = "Save";
+"emotional_analysis" = "Emotional Analysis: %@";
+"processing" = "Processing";
+"generating_image" = "The image is being generated...";
+"screenshot_failed" = "Screenshot Failed";
+"generate_image_error" = "Unable to generate the image. Please try again later.";
+"save_failed" = "Save Failed";
+"save_success" = "Save Successfully";
+"saved_to_album" = "The image has been saved to the photo album.";
+"ok" = "OK";
+
+/* Emotion Types */
+"positive" = "Positive";
+"negative" = "Negative";
+"neutral" = "Neutral"; 

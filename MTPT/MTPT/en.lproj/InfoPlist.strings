@@ -1,0 +1,3 @@
+"NSPhotoLibraryAddUsageDescription" = "Need access to your photo library to save images";
+"NSPhotoLibraryUsageDescription" = "Need access to your photo library to save images";
+"NSSpeechRecognitionUsageDescription" = "Used for text sentiment analysis"; 

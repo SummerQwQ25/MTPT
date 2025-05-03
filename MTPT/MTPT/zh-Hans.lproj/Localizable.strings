@@ -1,0 +1,28 @@
+/* Main View Controller */
+"question" = "问题";
+"answer" = "回答";
+"ai_analyzes" = "AI分析";
+"please_enter_question" = "请输入问题";
+"please_enter_answer" = "请输入答案";
+"generate_image" = "生成图片";
+"clear" = "清除";
+"enter_question_warning" = "请输入问题";
+"enter_answer_warning" = "请输入回答";
+
+/* Preview View Controller */
+"preview" = "预览";
+"save" = "保存";
+"emotional_analysis" = "情感分析: %@";
+"processing" = "处理中";
+"generating_image" = "正在生成图片...";
+"screenshot_failed" = "截图失败";
+"generate_image_error" = "无法生成图片，请稍后再试。";
+"save_failed" = "保存失败";
+"save_success" = "保存成功";
+"saved_to_album" = "图片已保存至相册";
+"ok" = "确定";
+
+/* Emotion Types */
+"positive" = "积极";
+"negative" = "消极";
+"neutral" = "中性"; 
