@@ -295,7 +295,7 @@ class PreviewViewController: UIViewController {
     }
   }
   
-  // 将原始的保存图片逻辑提取到这个方法中
+  // 修改proceedWithImageSaving方法来优化图像生成过程
   private func proceedWithImageSaving() {
     // 显示一个加载指示器
     let loadingAlert = UIAlertController(
@@ -307,8 +307,8 @@ class PreviewViewController: UIViewController {
     
     // 确保两个 markdown 视图都已经渲染完成
     if markdownsRendered < 2 {
-      // 如果尚未完成渲染，等待一段时间后重试
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+      // 如果尚未完成渲染，等待更长时间后重试
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
         loadingAlert.dismiss(animated: true) {
           self?.proceedWithImageSaving()
         }
@@ -316,57 +316,103 @@ class PreviewViewController: UIViewController {
       return
     }
     
-    // 使用 drawHierarchy 来生成完整内容截图
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-      guard let self = self else { return }
-      
-      // 保存原始滚动位置
-      let originalOffset = self.scrollView.contentOffset
-      
-      // 获取完整内容大小
-      let contentSize = self.scrollView.contentSize
-      
-      // 创建适当大小的位图上下文
-      UIGraphicsBeginImageContextWithOptions(contentSize, false, UIScreen.main.scale)
-      
-      // 保存原始剪裁设置
-      let oldClipsToBounds = self.scrollView.clipsToBounds
-      self.scrollView.clipsToBounds = false
-      
-      // 处理每个子视图
-      for subview in self.contentView.subviews {
-        // 计算子视图在整个内容中的绝对位置
-        let rect = subview.convert(subview.bounds, to: self.contentView)
-        
-        // 将每个子视图绘制到上下文
-        if let context = UIGraphicsGetCurrentContext() {
-          context.saveGState()
-          context.translateBy(x: rect.origin.x, y: rect.origin.y)
-          subview.layer.render(in: context)
-          context.restoreGState()
-        }
+    // 使用更可靠的方法来生成完整内容截图
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+      guard let self = self else { 
+        loadingAlert.dismiss(animated: true)
+        return 
       }
       
-      // 获取最终图像
-      let image = UIGraphicsGetImageFromCurrentImageContext()
+      // 使用alternative方法生成图像
+      self.generateImageAlternative { result in
+        loadingAlert.dismiss(animated: true) {
+          switch result {
+          case .success(let image):
+            // 成功生成图像，保存到相册
+            UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+          case .failure:
+            // 如果alternative方法失败，尝试备用方法
+            self.generateImageFallback { result in
+              switch result {
+              case .success(let image):
+                UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+              case .failure:
+                // 两种方法都失败了
+                self.showAlert(
+                  title: NSLocalizedString("screenshot_failed", comment: "Screenshot failed title"),
+                  message: NSLocalizedString("generate_image_error", comment: "Image generation error message")
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // 替代方法1：使用UIView的layer渲染更稳定的方法
+  private func generateImageAlternative(completion: @escaping (Result<UIImage, Error>) -> Void) {
+    // 获取内容大小
+    let contentSize = contentView.bounds.size
+    
+    // 创建位图上下文
+    UIGraphicsBeginImageContextWithOptions(contentSize, true, 0.0)
+    
+    guard let context = UIGraphicsGetCurrentContext() else {
       UIGraphicsEndImageContext()
+      completion(.failure(NSError(domain: "com.app.imagegen", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法创建图形上下文"])))
+      return
+    }
+    
+    // 设置白色背景
+    context.setFillColor(UIColor.white.cgColor)
+    context.fill(CGRect(origin: .zero, size: contentSize))
+    
+    // 将视图的layer渲染到上下文
+    contentView.layer.render(in: context)
+    
+    // 获取生成的图像
+    guard let image = UIGraphicsGetImageFromCurrentImageContext() else {
+      UIGraphicsEndImageContext()
+      completion(.failure(NSError(domain: "com.app.imagegen", code: 2, userInfo: [NSLocalizedDescriptionKey: "无法从上下文获取图像"])))
+      return
+    }
+    
+    UIGraphicsEndImageContext()
+    completion(.success(image))
+  }
+  
+  // 备用方法2：简单截图方法
+  private func generateImageFallback(completion: @escaping (Result<UIImage, Error>) -> Void) {
+    // 创建简单的截图
+    UIGraphicsBeginImageContextWithOptions(scrollView.contentSize, true, UIScreen.main.scale)
+    
+    // 备份当前状态
+    let savedContentOffset = scrollView.contentOffset
+    let savedFrame = scrollView.frame
+    
+    // 调整scrollView以显示整个内容
+    scrollView.contentOffset = .zero
+    scrollView.frame = CGRect(origin: .zero, size: scrollView.contentSize)
+    
+    // 将scrollView渲染到上下文
+    scrollView.drawHierarchy(in: scrollView.frame, afterScreenUpdates: true)
+    
+    // 获取图像
+    if let image = UIGraphicsGetImageFromCurrentImageContext() {
+      // 恢复scrollView状态
+      scrollView.contentOffset = savedContentOffset
+      scrollView.frame = savedFrame
       
-      // 恢复原始设置
-      self.scrollView.clipsToBounds = oldClipsToBounds
-      self.scrollView.setContentOffset(originalOffset, animated: false)
+      UIGraphicsEndImageContext()
+      completion(.success(image))
+    } else {
+      // 恢复scrollView状态
+      scrollView.contentOffset = savedContentOffset
+      scrollView.frame = savedFrame
       
-      // 处理生成的图像
-      loadingAlert.dismiss(animated: true) {
-        if let image = image {
-          UIImageWriteToSavedPhotosAlbum(image, self, #selector(PreviewViewController.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
-        } else {
-          // 截图失败
-          self.showAlert(
-            title: NSLocalizedString("screenshot_failed", comment: "Screenshot failed title"),
-            message: NSLocalizedString("generate_image_error", comment: "Image generation error message")
-          )
-        }
-      }
+      UIGraphicsEndImageContext()
+      completion(.failure(NSError(domain: "com.app.imagegen", code: 3, userInfo: [NSLocalizedDescriptionKey: "备用方法无法生成图像"])))
     }
   }
   
