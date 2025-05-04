@@ -222,7 +222,7 @@ class ViewController: UIViewController, UITextViewDelegate {
       make.height.equalTo(150)
     }
     
-    generateButton.setTitle(NSLocalizedString("generate_image", comment: "Generate image button"), for: .normal)
+    generateButton.setTitle(NSLocalizedString("preview", comment: "Preview button"), for: .normal)
     generateButton.backgroundColor = .black
     generateButton.setTitleColor(.white, for: .normal)
     generateButton.layer.cornerRadius = 5
