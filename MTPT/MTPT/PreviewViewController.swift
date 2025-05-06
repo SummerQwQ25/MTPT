@@ -13,7 +13,6 @@ class PreviewViewController: UIViewController {
   private let answerMarkdownView = MarkdownView()
   private let questionTitleLabel = UILabel()
   private let answerTitleLabel = UILabel()
-  private let emotionLabel = UILabel() // 添加情绪标签
   
   // 内容
   private var questionText: String
@@ -28,14 +27,10 @@ class PreviewViewController: UIViewController {
     return markdownsRendered >= 2  // 两个 MarkdownView 都加载完成
   }
   
-  // 是否启用颜色 (只用于存储状态，不再影响UI)
-  private var isColorEnabled: Bool
-  
   // 初始化方法，传入问题和答案内容
-  init(questionText: String, answerText: String, isColorEnabled: Bool) {
+  init(questionText: String, answerText: String) {
     self.questionText = questionText
     self.answerText = answerText
-    self.isColorEnabled = isColorEnabled
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -55,7 +50,6 @@ class PreviewViewController: UIViewController {
     }
     
     setupUI()
-    addEmotionLabel() // 添加情绪标签
     loadMarkdownContent()
     enableSwipeBackGesture()
   }
@@ -132,6 +126,7 @@ class PreviewViewController: UIViewController {
       make.top.equalTo(answerTitleLabel.snp.bottom).offset(10)
       make.leading.equalToSuperview().offset(20)
       make.trailing.equalToSuperview().offset(-20)
+      make.bottom.equalToSuperview().offset(-20)
       // 保存高度约束的引用以便后续更新
       answerMarkdownViewHeight = make.height.equalTo(50).constraint    // 初始高度
     }
@@ -139,35 +134,6 @@ class PreviewViewController: UIViewController {
     // 禁用滚动，以便获取完整内容
     questionMarkdownView.isScrollEnabled = false
     answerMarkdownView.isScrollEnabled = false
-  }
-  
-  // 添加情绪标签
-  private func addEmotionLabel() {
-    // 无论是否显示情感标签，都需要确保有正确的底部约束
-    if isColorEnabled {
-        // 用户启用了情感分析，添加标签
-        emotionLabel.font = .italicSystemFont(ofSize: 12)
-        emotionLabel.textColor = .gray
-        emotionLabel.textAlignment = .right
-        
-        // 分析情感
-        let emotion = ThemeManager.shared.analyzeEmotion(text: answerText)
-        let emotionText = String(format: NSLocalizedString("emotional_analysis", comment: "Emotional analysis label"), emotion.description)
-        emotionLabel.text = emotionText
-        
-        contentView.addSubview(emotionLabel)
-        emotionLabel.snp.makeConstraints { make in
-            make.top.equalTo(answerMarkdownView.snp.bottom).offset(10)
-            make.trailing.equalToSuperview().offset(-20)
-            make.bottom.equalToSuperview().offset(-10)
-        }
-    } else {
-        // 用户关闭了情感分析，不添加标签，但需要添加底部约束
-        // 为 answerMarkdownView 添加底部约束
-        answerMarkdownView.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(-20)
-        }
-    }
   }
   
   private func loadMarkdownContent() {

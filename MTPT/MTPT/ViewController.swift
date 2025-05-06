@@ -20,9 +20,6 @@ class ViewController: UIViewController, UITextViewDelegate {
   private let generateButton = UIButton(type: .system)
   private let clearButton = UIButton(type: .system)
   
-  // 添加切换开关
-  private let colorToggle = UISwitch()
-  
   // Combine 相关
   private var cancellables = Set<AnyCancellable>()
   
@@ -156,13 +153,6 @@ class ViewController: UIViewController, UITextViewDelegate {
     questionLabel.font = .boldSystemFont(ofSize: 16)
     view.addSubview(questionLabel)
     
-    // 添加开关标题
-    let toggleTitle = UILabel()
-    toggleTitle.text = NSLocalizedString("ai_analyzes", comment: "AI analyzes toggle label")
-    toggleTitle.font = .boldSystemFont(ofSize: 14)
-    toggleTitle.textColor = .black
-    view.addSubview(toggleTitle)
-    
     // 设置问题输入框
     questionTextView.layer.borderColor = UIColor.lightGray.cgColor
     questionTextView.layer.borderWidth = 1
@@ -170,26 +160,11 @@ class ViewController: UIViewController, UITextViewDelegate {
     questionTextView.font = .systemFont(ofSize: 14)
     view.addSubview(questionTextView)
     
-    // 设置切换开关
-    colorToggle.isOn = true // 默认开启
-    colorToggle.onTintColor = .black // 设置激活状态的背景色为黑色
-    view.addSubview(colorToggle)
-    
     // 设置约束
     questionLabel.snp.makeConstraints { make in
       make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
       make.leading.equalToSuperview().offset(20)
-      make.trailing.lessThanOrEqualTo(toggleTitle.snp.leading).offset(-10)
-    }
-    
-    toggleTitle.snp.makeConstraints { make in
-      make.trailing.equalTo(colorToggle.snp.leading).offset(-8)
-      make.centerY.equalTo(questionLabel)
-    }
-    
-    colorToggle.snp.makeConstraints { make in
       make.trailing.equalToSuperview().offset(-20)
-      make.centerY.equalTo(questionLabel)
     }
     
     questionTextView.snp.makeConstraints { make in
@@ -276,7 +251,7 @@ class ViewController: UIViewController, UITextViewDelegate {
     }
     
     // 创建预览控制器并推送
-    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText, isColorEnabled: colorToggle.isOn)
+    let previewVC = PreviewViewController(questionText: questionText, answerText: answerText)
     navigationController?.pushViewController(previewVC, animated: true)
   }
   
